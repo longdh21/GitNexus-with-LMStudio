@@ -31,5 +31,12 @@ export default defineConfig({
     fs: {
       allow: ['..'],
     },
+    proxy: {
+      '/lm-studio-proxy': {
+        target: 'http://localhost:1234',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/lm-studio-proxy/, ''),
+      },
+    },
   },
 });

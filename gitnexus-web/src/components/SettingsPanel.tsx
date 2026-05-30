@@ -21,7 +21,7 @@ import {
   fetchOpenRouterModels,
 } from '../core/llm/settings-service';
 import type { LLMSettings, LLMProvider } from '../core/llm/types';
-import { DEFAULT_OLLAMA_BASE_URL } from '../config/ui-constants';
+import { DEFAULT_OLLAMA_BASE_URL, DEFAULT_LM_STUDIO_BASE_URL } from '../config/ui-constants';
 import { ProviderConfigCard } from './settings/ProviderConfigCard';
 import { useTranslation } from 'react-i18next';
 
@@ -242,6 +242,26 @@ const checkOllamaStatus = async (
   }
 };
 
+/**
+ * Check connection to LM Studio
+ */
+const checkLMStudioStatus = async (
+  baseUrl: string,
+): Promise<{ ok: boolean; error: string | null }> => {
+  try {
+    const response = await fetch(`${baseUrl}/v1/models`, { method: 'GET', mode: 'no-cors' });
+    if (response.type === 'opaque') {
+      return { ok: true, error: null };
+    }
+    return { ok: response.ok, error: response.ok ? null : `LM Studio error: ${response.status}` };
+  } catch (error) {
+    return {
+      ok: false,
+      error: "Cannot connect to LM Studio. Make sure it's running on port 1234",
+    };
+  }
+};
+
 export const SettingsPanel = ({
   isOpen,
   onClose,
@@ -258,6 +278,9 @@ export const SettingsPanel = ({
   // Ollama connection state
   const [ollamaError, setOllamaError] = useState<string | null>(null);
   const [isCheckingOllama, setIsCheckingOllama] = useState(false);
+  // LM Studio connection state
+  const [lmStudioError, setLmStudioError] = useState<string | null>(null);
+  const [isCheckingLmStudio, setIsCheckingLmStudio] = useState(false);
   // OpenRouter models state
   const [openRouterModels, setOpenRouterModels] = useState<Array<{ id: string; name: string }>>([]);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
@@ -290,6 +313,16 @@ export const SettingsPanel = ({
     setOllamaError(error);
   }, []);
 
+  // Check LM Studio connection
+  const checkLmStudioConnection = useCallback(async (baseUrl: string) => {
+    setIsCheckingLmStudio(true);
+    setLmStudioError(null);
+
+    const { error } = await checkLMStudioStatus(baseUrl);
+    setIsCheckingLmStudio(false);
+    setLmStudioError(error);
+  }, []);
+
   // Load OpenRouter models
   const loadOpenRouterModels = useCallback(async () => {
     setIsLoadingModels(true);
@@ -307,6 +340,16 @@ export const SettingsPanel = ({
       return () => clearTimeout(timer);
     }
   }, [settings.ollama?.baseUrl, settings.activeProvider, checkOllamaConnection]);
+
+  useEffect(() => {
+    if (settings.activeProvider === 'lm-studio') {
+      const baseUrl = settings.lmStudio?.baseUrl ?? DEFAULT_LM_STUDIO_BASE_URL;
+      const timer = setTimeout(() => {
+        checkLmStudioConnection(baseUrl);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [settings.lmStudio?.baseUrl, settings.activeProvider, checkLmStudioConnection]);
 
   const handleProviderChange = (provider: LLMProvider) => {
     setSettings((prev) => ({ ...prev, activeProvider: provider }));
@@ -342,6 +385,7 @@ export const SettingsPanel = ({
     'minimax',
     'glm',
     'deepseek',
+    'lm-studio',
   ];
 
   return (
@@ -436,7 +480,9 @@ export const SettingsPanel = ({
                                   ? '🔮'
                                   : provider === 'deepseek'
                                     ? '🐋'
-                                    : '☁️'}
+                                    : provider === 'lm-studio'
+                                      ? '🤗'
+                                      : '☁️'}
                   </div>
                   <span className="font-medium">{getProviderDisplayName(provider)}</span>
                 </button>
@@ -894,6 +940,100 @@ export const SettingsPanel = ({
                 requires round-tripping reasoning content.
               </p>
             </ProviderConfigCard>
+          )}
+
+          {/* LM Studio Settings */}
+          {settings.activeProvider === 'lm-studio' && (
+            <div className="animate-fade-in space-y-4">
+              {/* How to run LM Studio */}
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
+                <p className="text-xs leading-relaxed text-amber-300">
+                  <span className="font-medium">{t('settings:providers.lmStudio.quickStart')}</span>{' '}
+                  {t('settings:providers.lmStudio.installFrom')}{' '}
+                  <a
+                    href="https://lmstudio.ai"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent hover:underline"
+                  >
+                    lmstudio.ai
+                  </a>
+                  {t('settings:providers.lmStudio.thenRun')}
+                </p>
+                <code className="mt-2 block rounded-lg bg-black/30 px-3 py-2 font-mono text-sm text-amber-200">
+                  {t('settings:providers.lmStudio.runCommand')}
+                </code>
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+                  <Server className="h-4 w-4" />
+                  {t('settings:baseUrl')}
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={settings.lmStudio?.baseUrl ?? DEFAULT_LM_STUDIO_BASE_URL}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        lmStudio: { ...prev.lmStudio!, baseUrl: e.target.value },
+                      }))
+                    }
+                    placeholder={DEFAULT_LM_STUDIO_BASE_URL}
+                    className="flex-1 rounded-xl border border-border-subtle bg-elevated px-4 py-3 font-mono text-sm text-text-primary transition-all outline-none placeholder:text-text-muted focus:border-accent focus:ring-2 focus:ring-accent/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      checkLmStudioConnection(
+                        settings.lmStudio?.baseUrl ?? DEFAULT_LM_STUDIO_BASE_URL,
+                      )
+                    }
+                    disabled={isCheckingLmStudio}
+                    className="rounded-xl border border-border-subtle bg-elevated px-3 py-3 text-text-secondary transition-colors hover:border-accent/50 hover:text-text-primary disabled:opacity-50"
+                    title={t('settings:checkConnection')}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isCheckingLmStudio ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
+                <p className="text-xs text-text-muted">
+                  {t('settings:defaultPort')}{' '}
+                  <code className="rounded bg-elevated px-1 py-0.5">1234</code>.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-secondary">
+                  {t('settings:model')}
+                </label>
+
+                {lmStudioError && !isCheckingLmStudio && (
+                  <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-2">
+                    <p className="flex items-center gap-1 text-xs text-red-400">
+                      <AlertCircle className="h-3 w-3" />
+                      {lmStudioError}
+                    </p>
+                  </div>
+                )}
+
+                <input
+                  type="text"
+                  value={settings.lmStudio?.model ?? ''}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      lmStudio: { ...prev.lmStudio!, model: e.target.value },
+                    }))
+                  }
+                  placeholder={t('settings:providers.lmStudio.modelPlaceholder')}
+                  className="w-full rounded-xl border border-border-subtle bg-elevated px-4 py-3 font-mono text-sm text-text-primary transition-all outline-none placeholder:text-text-muted focus:border-accent focus:ring-2 focus:ring-accent/20"
+                />
+                <p className="text-xs text-text-muted">
+                  {t('settings:providers.lmStudio.modelHint')}
+                </p>
+              </div>
+            </div>
           )}
 
           {/* GLM Settings */}

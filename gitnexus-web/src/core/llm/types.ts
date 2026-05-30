@@ -2,13 +2,17 @@
  * LLM Provider Types
  *
  * Type definitions for multi-provider LLM support.
- * Supports OpenAI, Azure OpenAI, Gemini, Anthropic, Ollama, OpenRouter, MiniMax, GLM, and DeepSeek.
+ * Supports OpenAI, Azure OpenAI, Gemini, Anthropic, Ollama, OpenRouter, MiniMax, GLM, DeepSeek, and LM Studio.
  */
 
 /**
  * Supported LLM providers
  */
-import { DEFAULT_OLLAMA_BASE_URL, DEFAULT_OPENROUTER_BASE_URL } from '../../config/ui-constants';
+import {
+  DEFAULT_OLLAMA_BASE_URL,
+  DEFAULT_OPENROUTER_BASE_URL,
+  DEFAULT_LM_STUDIO_BASE_URL,
+} from '../../config/ui-constants';
 export type LLMProvider =
   | 'openai'
   | 'azure-openai'
@@ -18,7 +22,8 @@ export type LLMProvider =
   | 'openrouter'
   | 'minimax'
   | 'glm'
-  | 'deepseek';
+  | 'deepseek'
+  | 'lm-studio';
 
 /**
  * Base configuration shared by all providers
@@ -117,6 +122,15 @@ export interface DeepSeekConfig extends BaseProviderConfig {
 }
 
 /**
+ * LM Studio configuration — locally running OpenAI-compatible server
+ */
+export interface LMStudioConfig extends BaseProviderConfig {
+  provider: 'lm-studio';
+  baseUrl?: string; // defaults to http://localhost:1234
+  model: string;
+}
+
+/**
  * Union type for all provider configurations
  */
 export type ProviderConfig =
@@ -128,7 +142,8 @@ export type ProviderConfig =
   | OpenRouterConfig
   | MiniMaxConfig
   | GLMConfig
-  | DeepSeekConfig;
+  | DeepSeekConfig
+  | LMStudioConfig;
 
 /**
  * Stored settings (what goes to localStorage)
@@ -148,6 +163,7 @@ export interface LLMSettings {
   minimax?: Partial<Omit<MiniMaxConfig, 'provider'>>;
   glm?: Partial<Omit<GLMConfig, 'provider'>>;
   deepseek?: Partial<Omit<DeepSeekConfig, 'provider'>>;
+  lmStudio?: Partial<Omit<LMStudioConfig, 'provider'>>;
 
   // Intelligent Clustering Settings
   intelligentClustering: boolean;
@@ -212,6 +228,11 @@ export const DEFAULT_LLM_SETTINGS: LLMSettings = {
   deepseek: {
     apiKey: '',
     model: 'deepseek-v4-flash',
+    temperature: 0.1,
+  },
+  lmStudio: {
+    baseUrl: DEFAULT_LM_STUDIO_BASE_URL,
+    model: '',
     temperature: 0.1,
   },
 };

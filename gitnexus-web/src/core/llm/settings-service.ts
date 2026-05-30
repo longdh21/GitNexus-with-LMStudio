@@ -18,9 +18,14 @@ import {
   MiniMaxConfig,
   GLMConfig,
   DeepSeekConfig,
+  LMStudioConfig,
   ProviderConfig,
 } from './types';
-import { DEFAULT_OPENROUTER_BASE_URL, DEFAULT_OLLAMA_BASE_URL } from '../../config/ui-constants';
+import {
+  DEFAULT_OPENROUTER_BASE_URL,
+  DEFAULT_OLLAMA_BASE_URL,
+  DEFAULT_LM_STUDIO_BASE_URL,
+} from '../../config/ui-constants';
 import { resilientFetch } from 'gitnexus-shared';
 
 const STORAGE_KEY = 'gitnexus-llm-settings';
@@ -63,6 +68,10 @@ const mergeWithDefaults = (parsed?: Partial<LLMSettings> | null): LLMSettings =>
   deepseek: {
     ...DEFAULT_LLM_SETTINGS.deepseek,
     ...parsed?.deepseek,
+  },
+  lmStudio: {
+    ...DEFAULT_LLM_SETTINGS.lmStudio,
+    ...parsed?.lmStudio,
   },
 });
 
@@ -151,7 +160,9 @@ export const updateProviderSettings = <T extends LLMProvider>(
                     ? Partial<Omit<GLMConfig, 'provider'>>
                     : T extends 'deepseek'
                       ? Partial<Omit<DeepSeekConfig, 'provider'>>
-                      : never
+                      : T extends 'lm-studio'
+                        ? Partial<Omit<LMStudioConfig, 'provider'>>
+                        : never
   >,
 ): LLMSettings => {
   const current = loadSettings();
@@ -257,6 +268,17 @@ export const updateProviderSettings = <T extends LLMProvider>(
       saveSettings(updated);
       return updated;
     }
+    case 'lm-studio': {
+      const updated: LLMSettings = {
+        ...current,
+        lmStudio: {
+          ...(current.lmStudio ?? {}),
+          ...(updates as Partial<Omit<LMStudioConfig, 'provider'>>),
+        },
+      };
+      saveSettings(updated);
+      return updated;
+    }
     default: {
       // Should be unreachable due to T extends LLMProvider, but keep a safe fallback
       const updated: LLMSettings = { ...current };
@@ -338,6 +360,13 @@ const providerBuilders: Record<LLMProvider, ProviderBuilder> = {
     if (!settings.deepseek?.apiKey) return null;
     return { provider: 'deepseek', ...settings.deepseek } as DeepSeekConfig;
   },
+  'lm-studio': (settings) => {
+    return {
+      provider: 'lm-studio',
+      ...settings.lmStudio,
+      baseUrl: settings.lmStudio?.baseUrl ?? DEFAULT_LM_STUDIO_BASE_URL,
+    } as LMStudioConfig;
+  },
 };
 
 export const getActiveProviderConfig = (): ProviderConfig | null => {
@@ -410,6 +439,8 @@ export const getProviderDisplayName = (provider: LLMProvider): string => {
       return 'GLM (Z.AI)';
     case 'deepseek':
       return 'DeepSeek';
+    case 'lm-studio':
+      return 'LM Studio (Local)';
     default:
       return provider;
   }
@@ -442,6 +473,8 @@ export const getAvailableModels = (provider: LLMProvider): string[] => {
       return ['GLM-5', 'GLM-5-Turbo', 'GLM-4.7', 'GLM-4.5'];
     case 'deepseek':
       return ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-chat', 'deepseek-reasoner'];
+    case 'lm-studio':
+      return [];
     default:
       return [];
   }
