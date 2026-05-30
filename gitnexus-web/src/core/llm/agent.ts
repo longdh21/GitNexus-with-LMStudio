@@ -30,11 +30,16 @@ import type {
   MiniMaxConfig,
   GLMConfig,
   DeepSeekConfig,
+  LMStudioConfig,
   AgentStreamChunk,
   AgentHistoryMessage,
 } from './types';
 import { type CodebaseContext, buildDynamicSystemPrompt } from './context-builder';
-import { DEFAULT_OLLAMA_BASE_URL, DEFAULT_OPENROUTER_BASE_URL } from '../../config/ui-constants';
+import {
+  DEFAULT_OLLAMA_BASE_URL,
+  DEFAULT_OPENROUTER_BASE_URL,
+  DEFAULT_LM_STUDIO_BASE_URL,
+} from '../../config/ui-constants';
 import {
   DeepSeekChatOpenAI,
   normalizeMessageContent,
@@ -294,6 +299,22 @@ export const createChatModel = (config: ProviderConfig): BaseChatModel => {
           apiKey: deepseekConfig.apiKey,
           baseURL: 'https://api.deepseek.com',
         },
+        streaming: true,
+      });
+    }
+
+    case 'lm-studio': {
+      const lmStudioConfig = config as LMStudioConfig;
+      const lmStudioUrl = lmStudioConfig.baseUrl ?? DEFAULT_LM_STUDIO_BASE_URL;
+      const isDev = typeof import.meta !== 'undefined' && import.meta.env?.DEV;
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const baseURL = isDev && origin ? `${origin}/lm-studio-proxy/v1` : `${lmStudioUrl}/v1`;
+      return new ChatOpenAI({
+        apiKey: 'lm-studio',
+        modelName: lmStudioConfig.model,
+        temperature: lmStudioConfig.temperature ?? 0.1,
+        maxTokens: lmStudioConfig.maxTokens,
+        configuration: { baseURL },
         streaming: true,
       });
     }

@@ -70,6 +70,14 @@
     },
     "glm": {
       "apiKeyPlaceholder": "输入 Z.AI API Key"
+    },
+    "lmStudio": {
+      "quickStart": "快速开始：",
+      "installFrom": "从以下位置下载 LM Studio：",
+      "thenRun": "，加载模型并启动本地服务器。",
+      "runCommand": "启动 LM Studio → 选择模型 → 启动服务器",
+      "modelPlaceholder": "例如：llama-3.2-3b-instruct、mistral-7b",
+      "modelHint": "输入你在 LM Studio 中加载的模型名称。"
     }
   },
   "loadingModels": "正在加载模型...",

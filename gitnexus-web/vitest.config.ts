@@ -14,6 +14,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'gitnexus-shared': path.resolve(__dirname, '../gitnexus-shared/src/index.ts'),
       '@anthropic-ai/sdk/lib/transform-json-schema': path.resolve(
         __dirname,
         'node_modules/@anthropic-ai/sdk/lib/transform-json-schema.mjs',

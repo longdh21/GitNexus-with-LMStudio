@@ -70,6 +70,14 @@
     },
     "glm": {
       "apiKeyPlaceholder": "Enter your Z.AI API key"
+    },
+    "lmStudio": {
+      "quickStart": "Quick Start:",
+      "installFrom": "Download LM Studio from",
+      "thenRun": ", load a model, and start the local server.",
+      "runCommand": "Start LM Studio → Select a model → Start Server",
+      "modelPlaceholder": "e.g., llama-3.2-3b-instruct, mistral-7b",
+      "modelHint": "Enter the name of the model you loaded in LM Studio."
     }
   },
   "loadingModels": "Loading models...",
