@@ -68,3 +68,13 @@ Added LM Studio locale strings:
 
 ### `gitnexus-web/src/locales/zh-CN/settings.json`
 Added Chinese translations for all LM Studio UI strings.
+
+# Simple run
+### Run backend:
+cd gitnexus
+npm run serve
+
+### Run frontend:
+cd gitnexus-web
+npm run build (if first time maybe need to build gitnexus-shared too)
+npm run dev 
