@@ -21,6 +21,6 @@
     },
     "types": ["vite/client"]
   },
-  "include": ["src", "../shared"],
+  "include": ["src", "../gitnexus-shared"],
   "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
 }

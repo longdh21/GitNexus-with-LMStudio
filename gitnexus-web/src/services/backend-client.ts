@@ -328,7 +328,7 @@ const fetchWithTimeout = async (
   } catch (error: unknown) {
     if (error instanceof CircuitOpenError) {
       throw new BackendError(
-        `GitNexus backend at ${_backendUrl} is unhealthy; retry in ${Math.ceil(error.retryAfterMs / 1000)}s`,
+        `GitNexus backend at ${_backendUrl} is unhealthy; retry in ${Math.ceil((error as CircuitOpenError).retryAfterMs / 1000)}s`,
         0,
         'network',
       );
@@ -336,7 +336,7 @@ const fetchWithTimeout = async (
     if (error instanceof ResilientFetchExhaustedError) {
       // Fall through to caller — surface the raw response so assertOk
       // can craft the BackendError with the right code.
-      return error.response;
+      return (error as ResilientFetchExhaustedError).response;
     }
     if (error instanceof DOMException && error.name === 'TimeoutError') {
       throw new BackendError(`Request to ${url} timed out after ${timeoutMs}ms`, 0, 'timeout');
